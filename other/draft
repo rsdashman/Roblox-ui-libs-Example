@@ -52,8 +52,8 @@ local redzlib = {
 	},
 	Save = {
 		UISize = {10, 10},
-		TabSize = 10,
-		Theme = "Dark"
+		TabSize = 20,
+		Theme = "Darker"
 	},
 	Settings = {},
 	Connection = {},
@@ -888,7 +888,7 @@ local redzlib = {
 }
 
 local ViewportSize = workspace.CurrentCamera.ViewportSize
-local UIScale = ViewportSize.Y / 250
+local UIScale = ViewportSize.Y / 450
 
 local Settings = redzlib.Settings
 local Flags = redzlib.Flags
@@ -1279,7 +1279,7 @@ local function ButtonFrame(Instance, Title, Description, HolderSize)
 	}), "DarkText")
 
 	local Frame = Make("Button", Instance, {
-		Size = UDim2.new(30, 0, 0, 60),
+		Size = UDim2.new(1, 0, 0, 25),
 		AutomaticSize = "Y",
 		Name = "Option"
 	})Make("Corner", Frame, UDim.new(0, 6))
