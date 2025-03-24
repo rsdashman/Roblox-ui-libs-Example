@@ -1,4 +1,4 @@
---good!
+--good! if dont work use loadstring(game:HttpGet("https://gist.githubusercontent.com/rsdashman/1dc5edca7bcf78a396166eaa2e8eda4d/raw/47ebe5773f28416fc1f569007b205c9ce0866571/gistfile1.txt"))()
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
 
 local Window = redzlib:MakeWindow({
