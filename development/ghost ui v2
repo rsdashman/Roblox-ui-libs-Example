@@ -1,0 +1,807 @@
+local GhostHub = {}
+GhostHub.__index = GhostHub
+
+-- Serviços
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+
+-- Configurações de estilo
+local Theme = {
+    Background = Color3.fromRGB(25, 25, 25),
+    Secondary = Color3.fromRGB(35, 35, 35),
+    Accent = Color3.fromRGB(255, 64, 64),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDark = Color3.fromRGB(180, 180, 180),
+    Border = Color3.fromRGB(45, 45, 45),
+    Success = Color3.fromRGB(64, 255, 64),
+    Warning = Color3.fromRGB(255, 255, 64)
+}
+
+-- Função para criar tweens
+local function CreateTween(object, info, properties)
+    local tween = TweenService:Create(object, info, properties)
+    tween:Play()
+    return tween
+end
+
+-- Função principal para criar a UI
+function GhostHub:CreateWindow(config)
+    config = config or {}
+    local windowTitle = config.Title or "GhostHub"
+    local windowSize = config.Size or UDim2.new(0, 580, 0, 460)
+    
+    local GUI = {}
+    
+    -- ScreenGui principal
+    GUI.ScreenGui = Instance.new("ScreenGui")
+    GUI.ScreenGui.Name = "GhostHubUI"
+    GUI.ScreenGui.ResetOnSpawn = false
+    GUI.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Proteção contra detecção
+    if syn and syn.protect_gui then
+        syn.protect_gui(GUI.ScreenGui)
+        GUI.ScreenGui.Parent = CoreGui
+    elseif gethui then
+        GUI.ScreenGui.Parent = gethui()
+    else
+        GUI.ScreenGui.Parent = CoreGui
+    end
+    
+    -- Frame principal
+    GUI.MainFrame = Instance.new("Frame")
+    GUI.MainFrame.Name = "MainFrame"
+    GUI.MainFrame.Parent = GUI.ScreenGui
+    GUI.MainFrame.BackgroundColor3 = Theme.Background
+    GUI.MainFrame.BorderSizePixel = 0
+    GUI.MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
+    GUI.MainFrame.Size = windowSize
+    GUI.MainFrame.Active = true
+    GUI.MainFrame.Draggable = true
+    
+    -- Borda do frame principal
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 8)
+    MainCorner.Parent = GUI.MainFrame
+    
+    -- Barra do título
+    GUI.TitleBar = Instance.new("Frame")
+    GUI.TitleBar.Name = "TitleBar"
+    GUI.TitleBar.Parent = GUI.MainFrame
+    GUI.TitleBar.BackgroundColor3 = Theme.Secondary
+    GUI.TitleBar.BorderSizePixel = 0
+    GUI.TitleBar.Size = UDim2.new(1, 0, 0, 35)
+    
+    local TitleCorner = Instance.new("UICorner")
+    TitleCorner.CornerRadius = UDim.new(0, 8)
+    TitleCorner.Parent = GUI.TitleBar
+    
+    -- Título
+    GUI.Title = Instance.new("TextLabel")
+    GUI.Title.Name = "Title"
+    GUI.Title.Parent = GUI.TitleBar
+    GUI.Title.BackgroundTransparency = 1
+    GUI.Title.Position = UDim2.new(0, 15, 0, 0)
+    GUI.Title.Size = UDim2.new(0, 200, 1, 0)
+    GUI.Title.Font = Enum.Font.GothamBold
+    GUI.Title.Text = "Xx " .. windowTitle .. " xX"
+    GUI.Title.TextColor3 = Theme.Text
+    GUI.Title.TextSize = 16
+    GUI.Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Search Bar
+    GUI.SearchFrame = Instance.new("Frame")
+    GUI.SearchFrame.Name = "SearchFrame"
+    GUI.SearchFrame.Parent = GUI.TitleBar
+    GUI.SearchFrame.BackgroundColor3 = Theme.Background
+    GUI.SearchFrame.BorderSizePixel = 0
+    GUI.SearchFrame.Position = UDim2.new(0, 220, 0, 5)
+    GUI.SearchFrame.Size = UDim2.new(0, 200, 0, 25)
+    
+    local SearchCorner = Instance.new("UICorner")
+    SearchCorner.CornerRadius = UDim.new(0, 4)
+    SearchCorner.Parent = GUI.SearchFrame
+    
+    GUI.SearchBox = Instance.new("TextBox")
+    GUI.SearchBox.Name = "SearchBox"
+    GUI.SearchBox.Parent = GUI.SearchFrame
+    GUI.SearchBox.BackgroundTransparency = 1
+    GUI.SearchBox.Position = UDim2.new(0, 8, 0, 0)
+    GUI.SearchBox.Size = UDim2.new(1, -30, 1, 0)
+    GUI.SearchBox.Font = Enum.Font.Gotham
+    GUI.SearchBox.PlaceholderText = "Pesquisar..."
+    GUI.SearchBox.PlaceholderColor3 = Theme.TextDark
+    GUI.SearchBox.Text = ""
+    GUI.SearchBox.TextColor3 = Theme.Text
+    GUI.SearchBox.TextSize = 12
+    GUI.SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Ícone de pesquisa
+    GUI.SearchIcon = Instance.new("TextLabel")
+    GUI.SearchIcon.Name = "SearchIcon"
+    GUI.SearchIcon.Parent = GUI.SearchFrame
+    GUI.SearchIcon.BackgroundTransparency = 1
+    GUI.SearchIcon.Position = UDim2.new(1, -20, 0, 0)
+    GUI.SearchIcon.Size = UDim2.new(0, 20, 1, 0)
+    GUI.SearchIcon.Font = Enum.Font.GothamBold
+    GUI.SearchIcon.Text = "🔍"
+    GUI.SearchIcon.TextColor3 = Theme.TextDark
+    GUI.SearchIcon.TextSize = 12
+    
+    -- Botão de fechar
+    GUI.CloseBtn = Instance.new("TextButton")
+    GUI.CloseBtn.Name = "CloseBtn"
+    GUI.CloseBtn.Parent = GUI.TitleBar
+    GUI.CloseBtn.BackgroundColor3 = Theme.Accent
+    GUI.CloseBtn.BorderSizePixel = 0
+    GUI.CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+    GUI.CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    GUI.CloseBtn.Font = Enum.Font.GothamBold
+    GUI.CloseBtn.Text = "X"
+    GUI.CloseBtn.TextColor3 = Theme.Text
+    GUI.CloseBtn.TextSize = 14
+    
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 4)
+    CloseCorner.Parent = GUI.CloseBtn
+    
+    -- Sidebar
+    GUI.Sidebar = Instance.new("Frame")
+    GUI.Sidebar.Name = "Sidebar"
+    GUI.Sidebar.Parent = GUI.MainFrame
+    GUI.Sidebar.BackgroundColor3 = Theme.Secondary
+    GUI.Sidebar.BorderSizePixel = 0
+    GUI.Sidebar.Position = UDim2.new(0, 0, 0, 35)
+    GUI.Sidebar.Size = UDim2.new(0, 120, 1, -35)
+    
+    -- Container de conteúdo
+    GUI.ContentFrame = Instance.new("Frame")
+    GUI.ContentFrame.Name = "ContentFrame"
+    GUI.ContentFrame.Parent = GUI.MainFrame
+    GUI.ContentFrame.BackgroundColor3 = Theme.Background
+    GUI.ContentFrame.BorderSizePixel = 0
+    GUI.ContentFrame.Position = UDim2.new(0, 120, 0, 35)
+    GUI.ContentFrame.Size = UDim2.new(1, -120, 1, -35)
+    
+    -- ScrollingFrame para o conteúdo
+    GUI.ContentScroll = Instance.new("ScrollingFrame")
+    GUI.ContentScroll.Name = "ContentScroll"
+    GUI.ContentScroll.Parent = GUI.ContentFrame
+    GUI.ContentScroll.BackgroundTransparency = 1
+    GUI.ContentScroll.BorderSizePixel = 0
+    GUI.ContentScroll.Size = UDim2.new(1, 0, 1, 0)
+    GUI.ContentScroll.ScrollBarThickness = 4
+    GUI.ContentScroll.ScrollBarImageColor3 = Theme.Accent
+    
+    -- Layout para o conteúdo
+    local ContentLayout = Instance.new("UIListLayout")
+    ContentLayout.Parent = GUI.ContentScroll
+    ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ContentLayout.Padding = UDim.new(0, 8)
+    
+    local ContentPadding = Instance.new("UIPadding")
+    ContentPadding.Parent = GUI.ContentScroll
+    ContentPadding.PaddingTop = UDim.new(0, 15)
+    ContentPadding.PaddingLeft = UDim.new(0, 15)
+    ContentPadding.PaddingRight = UDim.new(0, 15)
+    ContentPadding.PaddingBottom = UDim.new(0, 15)
+    
+    -- Layout para sidebar
+    local SidebarLayout = Instance.new("UIListLayout")
+    SidebarLayout.Parent = GUI.Sidebar
+    SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SidebarLayout.Padding = UDim.new(0, 2)
+    
+    local SidebarPadding = Instance.new("UIPadding")
+    SidebarPadding.Parent = GUI.Sidebar
+    SidebarPadding.PaddingTop = UDim.new(0, 10)
+    SidebarPadding.PaddingLeft = UDim.new(0, 5)
+    SidebarPadding.PaddingRight = UDim.new(0, 5)
+    
+    -- Variáveis para tabs
+    GUI.Tabs = {}
+    GUI.CurrentTab = nil
+    GUI.AllElements = {} -- Para pesquisa
+    GUI.SearchResults = {} -- Resultados da pesquisa
+    
+    -- Função de pesquisa
+    local function SearchElements(query)
+        GUI.SearchResults = {}
+        
+        if query == "" then
+            -- Mostrar todos os elementos
+            for _, tab in pairs(GUI.Tabs) do
+                for _, element in pairs(tab.Elements) do
+                    element.Visible = true
+                end
+            end
+            return
+        end
+        
+        query = string.lower(query)
+        
+        -- Esconder todos os elementos primeiro
+        for _, tab in pairs(GUI.Tabs) do
+            for _, element in pairs(tab.Elements) do
+                element.Visible = false
+            end
+        end
+        
+        -- Procurar e mostrar elementos que correspondem
+        for _, tab in pairs(GUI.Tabs) do
+            for _, element in pairs(tab.Elements) do
+                local elementName = string.lower(element.Name)
+                if string.find(elementName, query) then
+                    element.Visible = true
+                    table.insert(GUI.SearchResults, {tab = tab, element = element})
+                end
+            end
+        end
+        
+        -- Se houver resultados, mostrar a primeira aba com resultados
+        if #GUI.SearchResults > 0 then
+            local firstResultTab = GUI.SearchResults[1].tab
+            if GUI.CurrentTab ~= firstResultTab then
+                -- Ativar a aba com resultados
+                for _, tab in pairs(GUI.Tabs) do
+                    tab.Button.BackgroundColor3 = Theme.Border
+                    tab.Button.TextColor3 = Theme.TextDark
+                    tab.Container.Visible = false
+                end
+                
+                firstResultTab.Button.BackgroundColor3 = Theme.Accent
+                firstResultTab.Button.TextColor3 = Theme.Text
+                firstResultTab.Container.Visible = true
+                GUI.CurrentTab = firstResultTab
+            end
+        end
+    end
+    
+    -- Conectar evento de pesquisa
+    GUI.SearchBox.Changed:Connect(function(property)
+        if property == "Text" then
+            SearchElements(GUI.SearchBox.Text)
+        end
+    end)
+    
+    -- Limpar pesquisa quando perder foco
+    GUI.SearchBox.FocusLost:Connect(function()
+        if GUI.SearchBox.Text == "" then
+            SearchElements("")
+        end
+    end)
+    
+    -- Função para criar tab
+    function GUI:CreateTab(config)
+        config = config or {}
+        local tabName = config.Name or "Tab"
+        local tabIcon = config.Icon or ""
+        
+        local Tab = {}
+        
+        -- Botão da tab
+        Tab.Button = Instance.new("TextButton")
+        Tab.Button.Name = tabName
+        Tab.Button.Parent = GUI.Sidebar
+        Tab.Button.BackgroundColor3 = Theme.Border
+        Tab.Button.BorderSizePixel = 0
+        Tab.Button.Size = UDim2.new(1, 0, 0, 35)
+        Tab.Button.Font = Enum.Font.Gotham
+        Tab.Button.Text = tabName
+        Tab.Button.TextColor3 = Theme.TextDark
+        Tab.Button.TextSize = 12
+        
+        local TabCorner = Instance.new("UICorner")
+        TabCorner.CornerRadius = UDim.new(0, 6)
+        TabCorner.Parent = Tab.Button
+        
+        -- Container da tab
+        Tab.Container = Instance.new("Frame")
+        Tab.Container.Name = tabName .. "Container"
+        Tab.Container.Parent = GUI.ContentScroll
+        Tab.Container.BackgroundTransparency = 1
+        Tab.Container.Size = UDim2.new(1, 0, 0, 0)
+        Tab.Container.AutomaticSize = Enum.AutomaticSize.Y
+        Tab.Container.Visible = false
+        
+        local TabLayout = Instance.new("UIListLayout")
+        TabLayout.Parent = Tab.Container
+        TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        TabLayout.Padding = UDim.new(0, 8)
+        
+        -- Função para ativar tab
+        local function ActivateTab()
+            -- Desativar todas as tabs
+            for _, tab in pairs(GUI.Tabs) do
+                tab.Button.BackgroundColor3 = Theme.Border
+                tab.Button.TextColor3 = Theme.TextDark
+                tab.Container.Visible = false
+            end
+            
+            -- Ativar tab atual
+            Tab.Button.BackgroundColor3 = Theme.Accent
+            Tab.Button.TextColor3 = Theme.Text
+            Tab.Container.Visible = true
+            GUI.CurrentTab = Tab
+        end
+        
+        Tab.Button.MouseButton1Click:Connect(ActivateTab)
+        
+        -- Hover effect
+        Tab.Button.MouseEnter:Connect(function()
+            if GUI.CurrentTab ~= Tab then
+                CreateTween(Tab.Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Secondary})
+            end
+        end)
+        
+        Tab.Button.MouseLeave:Connect(function()
+            if GUI.CurrentTab ~= Tab then
+                CreateTween(Tab.Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Border})
+            end
+        end)
+        
+        -- Elementos da tab
+        Tab.Elements = {}
+        
+        -- Função para criar seção
+        function Tab:CreateSection(config)
+            config = config or {}
+            local sectionName = config.Name or "Section"
+            
+            local Section = Instance.new("Frame")
+            Section.Name = sectionName
+            Section.Parent = Tab.Container
+            Section.BackgroundColor3 = Theme.Secondary
+            Section.BorderSizePixel = 0
+            Section.Size = UDim2.new(1, 0, 0, 0)
+            Section.AutomaticSize = Enum.AutomaticSize.Y
+            
+            local SectionCorner = Instance.new("UICorner")
+            SectionCorner.CornerRadius = UDim.new(0, 6)
+            SectionCorner.Parent = Section
+            
+            local SectionTitle = Instance.new("TextLabel")
+            SectionTitle.Name = "Title"
+            SectionTitle.Parent = Section
+            SectionTitle.BackgroundTransparency = 1
+            SectionTitle.Position = UDim2.new(0, 15, 0, 10)
+            SectionTitle.Size = UDim2.new(1, -30, 0, 20)
+            SectionTitle.Font = Enum.Font.GothamBold
+            SectionTitle.Text = sectionName
+            SectionTitle.TextColor3 = Theme.Text
+            SectionTitle.TextSize = 14
+            SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+            
+            local SectionContainer = Instance.new("Frame")
+            SectionContainer.Name = "Container"
+            SectionContainer.Parent = Section
+            SectionContainer.BackgroundTransparency = 1
+            SectionContainer.Position = UDim2.new(0, 0, 0, 35)
+            SectionContainer.Size = UDim2.new(1, 0, 0, 0)
+            SectionContainer.AutomaticSize = Enum.AutomaticSize.Y
+            
+            local SectionLayout = Instance.new("UIListLayout")
+            SectionLayout.Parent = SectionContainer
+            SectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            SectionLayout.Padding = UDim.new(0, 5)
+            
+            local SectionPadding = Instance.new("UIPadding")
+            SectionPadding.Parent = SectionContainer
+            SectionPadding.PaddingLeft = UDim.new(0, 15)
+            SectionPadding.PaddingRight = UDim.new(0, 15)
+            SectionPadding.PaddingBottom = UDim.new(0, 15)
+            
+            return SectionContainer
+        end
+        
+        -- Função para criar botão
+        function Tab:CreateButton(config)
+            config = config or {}
+            local buttonName = config.Name or "Button"
+            local buttonCallback = config.Callback or function() end
+            
+            local Button = Instance.new("TextButton")
+            Button.Name = buttonName
+            Button.Parent = Tab.Container
+            Button.BackgroundColor3 = Theme.Border
+            Button.BorderSizePixel = 0
+            Button.Size = UDim2.new(1, 0, 0, 35)
+            Button.Font = Enum.Font.Gotham
+            Button.Text = buttonName
+            Button.TextColor3 = Theme.Text
+            Button.TextSize = 12
+            
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 6)
+            ButtonCorner.Parent = Button
+            
+            Button.MouseButton1Click:Connect(buttonCallback)
+            
+            -- Hover effect
+            Button.MouseEnter:Connect(function()
+                CreateTween(Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Secondary})
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                CreateTween(Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Border})
+            end)
+            
+            -- Adicionar aos elementos da tab para pesquisa
+            table.insert(Tab.Elements, Button)
+            
+            return Button
+        end
+        
+        -- Função para criar toggle
+        function Tab:CreateToggle(config)
+            config = config or {}
+            local toggleName = config.Name or "Toggle"
+            local toggleDefault = config.Default or false
+            local toggleCallback = config.Callback or function() end
+            
+            local Toggle = Instance.new("Frame")
+            Toggle.Name = toggleName
+            Toggle.Parent = Tab.Container
+            Toggle.BackgroundColor3 = Theme.Border
+            Toggle.BorderSizePixel = 0
+            Toggle.Size = UDim2.new(1, 0, 0, 35)
+            
+            local ToggleCorner = Instance.new("UICorner")
+            ToggleCorner.CornerRadius = UDim.new(0, 6)
+            ToggleCorner.Parent = Toggle
+            
+            local ToggleLabel = Instance.new("TextLabel")
+            ToggleLabel.Name = "Label"
+            ToggleLabel.Parent = Toggle
+            ToggleLabel.BackgroundTransparency = 1
+            ToggleLabel.Position = UDim2.new(0, 15, 0, 0)
+            ToggleLabel.Size = UDim2.new(1, -60, 1, 0)
+            ToggleLabel.Font = Enum.Font.Gotham
+            ToggleLabel.Text = toggleName
+            ToggleLabel.TextColor3 = Theme.Text
+            ToggleLabel.TextSize = 12
+            ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            
+            local ToggleButton = Instance.new("TextButton")
+            ToggleButton.Name = "Button"
+            ToggleButton.Parent = Toggle
+            ToggleButton.BackgroundColor3 = toggleDefault and Theme.Success or Theme.Accent
+            ToggleButton.BorderSizePixel = 0
+            ToggleButton.Position = UDim2.new(1, -40, 0.5, -10)
+            ToggleButton.Size = UDim2.new(0, 35, 0, 20)
+            ToggleButton.Text = toggleDefault and "ON" or "OFF"
+            ToggleButton.Font = Enum.Font.GothamBold
+            ToggleButton.TextColor3 = Theme.Text
+            ToggleButton.TextSize = 10
+            
+            local ToggleButtonCorner = Instance.new("UICorner")
+            ToggleButtonCorner.CornerRadius = UDim.new(0, 10)
+            ToggleButtonCorner.Parent = ToggleButton
+            
+            local toggled = toggleDefault
+            
+            ToggleButton.MouseButton1Click:Connect(function()
+                toggled = not toggled
+                ToggleButton.Text = toggled and "ON" or "OFF"
+                ToggleButton.BackgroundColor3 = toggled and Theme.Success or Theme.Accent
+                toggleCallback(toggled)
+            end)
+            
+            -- Adicionar aos elementos da tab para pesquisa
+            table.insert(Tab.Elements, Toggle)
+            
+            return Toggle
+        end
+        
+        -- Função para criar slider
+        function Tab:CreateSlider(config)
+            config = config or {}
+            local sliderName = config.Name or "Slider"
+            local sliderMin = config.Min or 0
+            local sliderMax = config.Max or 100
+            local sliderDefault = config.Default or sliderMin
+            local sliderCallback = config.Callback or function() end
+            local sliderSuffix = config.Suffix or ""
+            
+            local Slider = Instance.new("Frame")
+            Slider.Name = sliderName
+            Slider.Parent = Tab.Container
+            Slider.BackgroundColor3 = Theme.Border
+            Slider.BorderSizePixel = 0
+            Slider.Size = UDim2.new(1, 0, 0, 50)
+            
+            local SliderCorner = Instance.new("UICorner")
+            SliderCorner.CornerRadius = UDim.new(0, 6)
+            SliderCorner.Parent = Slider
+            
+            -- Label do slider
+            local SliderLabel = Instance.new("TextLabel")
+            SliderLabel.Name = "Label"
+            SliderLabel.Parent = Slider
+            SliderLabel.BackgroundTransparency = 1
+            SliderLabel.Position = UDim2.new(0, 15, 0, 5)
+            SliderLabel.Size = UDim2.new(1, -80, 0, 20)
+            SliderLabel.Font = Enum.Font.Gotham
+            SliderLabel.Text = sliderName
+            SliderLabel.TextColor3 = Theme.Text
+            SliderLabel.TextSize = 12
+            SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+            
+            -- Valor do slider
+            local SliderValue = Instance.new("TextLabel")
+            SliderValue.Name = "Value"
+            SliderValue.Parent = Slider
+            SliderValue.BackgroundTransparency = 1
+            SliderValue.Position = UDim2.new(1, -70, 0, 5)
+            SliderValue.Size = UDim2.new(0, 65, 0, 20)
+            SliderValue.Font = Enum.Font.GothamBold
+            SliderValue.Text = tostring(sliderDefault) .. sliderSuffix
+            SliderValue.TextColor3 = Theme.Accent
+            SliderValue.TextSize = 11
+            SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+            
+            -- Background da barra
+            local SliderBack = Instance.new("Frame")
+            SliderBack.Name = "Background"
+            SliderBack.Parent = Slider
+            SliderBack.BackgroundColor3 = Theme.Background
+            SliderBack.BorderSizePixel = 0
+            SliderBack.Position = UDim2.new(0, 15, 0, 30)
+            SliderBack.Size = UDim2.new(1, -30, 0, 6)
+            
+            local SliderBackCorner = Instance.new("UICorner")
+            SliderBackCorner.CornerRadius = UDim.new(0, 3)
+            SliderBackCorner.Parent = SliderBack
+            
+            -- Barra de progresso
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "Fill"
+            SliderFill.Parent = SliderBack
+            SliderFill.BackgroundColor3 = Theme.Accent
+            SliderFill.BorderSizePixel = 0
+            SliderFill.Size = UDim2.new((sliderDefault - sliderMin) / (sliderMax - sliderMin), 0, 1, 0)
+            
+            local SliderFillCorner = Instance.new("UICorner")
+            SliderFillCorner.CornerRadius = UDim.new(0, 3)
+            SliderFillCorner.Parent = SliderFill
+            
+            -- Botão do slider
+            local SliderButton = Instance.new("TextButton")
+            SliderButton.Name = "Button"
+            SliderButton.Parent = SliderBack
+            SliderButton.BackgroundColor3 = Theme.Text
+            SliderButton.BorderSizePixel = 0
+            SliderButton.Position = UDim2.new((sliderDefault - sliderMin) / (sliderMax - sliderMin), -6, 0.5, -6)
+            SliderButton.Size = UDim2.new(0, 12, 0, 12)
+            SliderButton.Text = ""
+            
+            local SliderButtonCorner = Instance.new("UICorner")
+            SliderButtonCorner.CornerRadius = UDim.new(0, 6)
+            SliderButtonCorner.Parent = SliderButton
+            
+            local currentValue = sliderDefault
+            local dragging = false
+            
+            local function UpdateSlider(value)
+                value = math.clamp(value, sliderMin, sliderMax)
+                currentValue = math.floor(value + 0.5)
+                
+                local percentage = (currentValue - sliderMin) / (sliderMax - sliderMin)
+                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+                SliderButton.Position = UDim2.new(percentage, -6, 0.5, -6)
+                SliderValue.Text = tostring(currentValue) .. sliderSuffix
+                
+                sliderCallback(currentValue)
+            end
+            
+            SliderButton.MouseButton1Down:Connect(function()
+                dragging = true
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local percentage = math.clamp((Mouse.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+                    local value = sliderMin + (percentage * (sliderMax - sliderMin))
+                    UpdateSlider(value)
+                end
+            end)
+            
+            SliderBack.MouseButton1Down:Connect(function()
+                local percentage = math.clamp((Mouse.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+                local value = sliderMin + (percentage * (sliderMax - sliderMin))
+                UpdateSlider(value)
+            end)
+            
+            -- Adicionar aos elementos da tab para pesquisa
+            table.insert(Tab.Elements, Slider)
+            
+            return Slider
+        end
+        
+        -- Função para criar dropdown
+        function Tab:CreateDropdown(config)
+            config = config or {}
+            local dropdownName = config.Name or "Dropdown"
+            local dropdownOptions = config.Options or {"Option 1", "Option 2", "Option 3"}
+            local dropdownDefault = config.Default or dropdownOptions[1]
+            local dropdownCallback = config.Callback or function() end
+            
+            local Dropdown = Instance.new("Frame")
+            Dropdown.Name = dropdownName
+            Dropdown.Parent = Tab.Container
+            Dropdown.BackgroundColor3 = Theme.Border
+            Dropdown.BorderSizePixel = 0
+            Dropdown.Size = UDim2.new(1, 0, 0, 35)
+            Dropdown.ClipsDescendants = true
+            
+            local DropdownCorner = Instance.new("UICorner")
+            DropdownCorner.CornerRadius = UDim.new(0, 6)
+            DropdownCorner.Parent = Dropdown
+            
+            -- Label do dropdown
+            local DropdownLabel = Instance.new("TextLabel")
+            DropdownLabel.Name = "Label"
+            DropdownLabel.Parent = Dropdown
+            DropdownLabel.BackgroundTransparency = 1
+            DropdownLabel.Position = UDim2.new(0, 15, 0, 0)
+            DropdownLabel.Size = UDim2.new(1, -100, 0, 35)
+            DropdownLabel.Font = Enum.Font.Gotham
+            DropdownLabel.Text = dropdownName
+            DropdownLabel.TextColor3 = Theme.Text
+            DropdownLabel.TextSize = 12
+            DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+            
+            -- Botão principal do dropdown
+            local DropdownButton = Instance.new("TextButton")
+            DropdownButton.Name = "Button"
+            DropdownButton.Parent = Dropdown
+            DropdownButton.BackgroundColor3 = Theme.Background
+            DropdownButton.BorderSizePixel = 0
+            DropdownButton.Position = UDim2.new(1, -120, 0, 5)
+            DropdownButton.Size = UDim2.new(0, 105, 0, 25)
+            DropdownButton.Font = Enum.Font.Gotham
+            DropdownButton.Text = dropdownDefault .. " ▼"
+            DropdownButton.TextColor3 = Theme.Text
+            DropdownButton.TextSize = 10
+            
+            local DropdownButtonCorner = Instance.new("UICorner")
+            DropdownButtonCorner.CornerRadius = UDim.new(0, 4)
+            DropdownButtonCorner.Parent = DropdownButton
+            
+            -- Container das opções
+            local DropdownList = Instance.new("Frame")
+            DropdownList.Name = "List"
+            DropdownList.Parent = Dropdown
+            DropdownList.BackgroundColor3 = Theme.Background
+            DropdownList.BorderSizePixel = 0
+            DropdownList.Position = UDim2.new(1, -120, 0, 35)
+            DropdownList.Size = UDim2.new(0, 105, 0, 0)
+            DropdownList.Visible = false
+            
+            local DropdownListCorner = Instance.new("UICorner")
+            DropdownListCorner.CornerRadius = UDim.new(0, 4)
+            DropdownListCorner.Parent = DropdownList
+            
+            local DropdownListLayout = Instance.new("UIListLayout")
+            DropdownListLayout.Parent = DropdownList
+            DropdownListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            
+            local currentSelection = dropdownDefault
+            local isOpen = false
+            
+            -- Criar opções
+            for i, option in ipairs(dropdownOptions) do
+                local OptionButton = Instance.new("TextButton")
+                OptionButton.Name = option
+                OptionButton.Parent = DropdownList
+                OptionButton.BackgroundColor3 = Theme.Secondary
+                OptionButton.BorderSizePixel = 0
+                OptionButton.Size = UDim2.new(1, 0, 0, 25)
+                OptionButton.Font = Enum.Font.Gotham
+                OptionButton.Text = option
+                OptionButton.TextColor3 = Theme.Text
+                OptionButton.TextSize = 10
+                
+                -- Hover effect
+                OptionButton.MouseEnter:Connect(function()
+                    OptionButton.BackgroundColor3 = Theme.Accent
+                end)
+                
+                OptionButton.MouseLeave:Connect(function()
+                    OptionButton.BackgroundColor3 = Theme.Secondary
+                end)
+                
+                OptionButton.MouseButton1Click:Connect(function()
+                    currentSelection = option
+                    DropdownButton.Text = option .. " ▼"
+                    dropdownCallback(option)
+                    
+                    -- Fechar dropdown
+                    isOpen = false
+                    DropdownList.Visible = false
+                    CreateTween(Dropdown, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 35)})
+                    DropdownButton.Text = currentSelection .. " ▼"
+                end)
+            end
+            
+            -- Evento do botão principal
+            DropdownButton.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                
+                if isOpen then
+                    DropdownList.Visible = true
+                    local listHeight = #dropdownOptions * 25
+                    CreateTween(Dropdown, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 35 + listHeight + 5)})
+                    DropdownButton.Text = currentSelection .. " ▲"
+                else
+                    DropdownList.Visible = false
+                    CreateTween(Dropdown, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 35)})
+                    DropdownButton.Text = currentSelection .. " ▼"
+                end
+            end)
+            
+            -- Fechar ao clicar fora
+            UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if isOpen and not DropdownButton:IsAncestorOf(game.Players.LocalPlayer:GetMouse().Target or workspace) then
+                        isOpen = false
+                        DropdownList.Visible = false
+                        CreateTween(Dropdown, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 35)})
+                        DropdownButton.Text = currentSelection .. " ▼"
+                    end
+                end
+            end)
+            
+            -- Adicionar aos elementos da tab para pesquisa
+            table.insert(Tab.Elements, Dropdown)
+            
+            return Dropdown
+        end
+        
+        -- Adicionar tab à lista
+        GUI.Tabs[tabName] = Tab
+        
+        -- Ativar primeira tab
+        if #GUI.Tabs == 1 or GUI.CurrentTab == nil then
+            ActivateTab()
+        end
+        
+        return Tab
+    end
+    
+    -- Eventos do botão fechar
+    GUI.CloseBtn.MouseButton1Click:Connect(function()
+        CreateTween(GUI.MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)})
+        wait(0.3)
+        GUI.ScreenGui:Destroy()
+    end)
+    
+    -- Hover effect do botão fechar
+    GUI.CloseBtn.MouseEnter:Connect(function()
+        CreateTween(GUI.CloseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 100, 100)})
+    end)
+    
+    GUI.CloseBtn.MouseLeave:Connect(function()
+        CreateTween(GUI.CloseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Accent})
+    end)
+    
+    -- Animação de entrada
+    GUI.MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    CreateTween(GUI.MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Size = windowSize})
+    
+    return GUI
+end
+
+return GhostHub
