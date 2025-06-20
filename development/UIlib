@@ -1,0 +1,544 @@
+-- Roblox UI Library
+-- Uma biblioteca completa de UI para Roblox com botões, sliders e tabs laterais
+
+local UILibrary = {}
+UILibrary.__index = UILibrary
+
+-- Serviços
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Configurações padrão
+local DEFAULT_CONFIG = {
+    MainColor = Color3.fromRGB(30, 30, 30),
+    AccentColor = Color3.fromRGB(0, 162, 255),
+    BackgroundColor = Color3.fromRGB(20, 20, 20),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    BorderColor = Color3.fromRGB(60, 60, 60)
+}
+
+-- Função para criar tweens suaves
+local function createTween(object, properties, duration)
+    duration = duration or 0.3
+    local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad), properties)
+    tween:Play()
+    return tween
+end
+
+-- Construtor principal
+function UILibrary.new(config)
+    local self = setmetatable({}, UILibrary)
+    
+    self.config = config or DEFAULT_CONFIG
+    self.tabs = {}
+    self.currentTab = nil
+    
+    self:createMainGui()
+    return self
+end
+
+-- Criar a GUI principal
+function UILibrary:createMainGui()
+    -- ScreenGui principal
+    self.screenGui = Instance.new("ScreenGui")
+    self.screenGui.Name = "UILibrary"
+    self.screenGui.ResetOnSpawn = false
+    self.screenGui.Parent = playerGui
+    
+    -- Frame principal
+    self.mainFrame = Instance.new("Frame")
+    self.mainFrame.Name = "MainFrame"
+    self.mainFrame.Size = UDim2.new(0, 700, 0, 500)
+    self.mainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
+    self.mainFrame.BackgroundColor3 = self.config.MainColor
+    self.mainFrame.BorderSizePixel = 0
+    self.mainFrame.Active = true
+    self.mainFrame.Draggable = true
+    self.mainFrame.Parent = self.screenGui
+    
+    -- Cantos arredondados para o frame principal
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 8)
+    mainCorner.Parent = self.mainFrame
+    
+    -- Título
+    self.titleLabel = Instance.new("TextLabel")
+    self.titleLabel.Name = "Title"
+    self.titleLabel.Size = UDim2.new(1, 0, 0, 40)
+    self.titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    self.titleLabel.BackgroundColor3 = self.config.AccentColor
+    self.titleLabel.BorderSizePixel = 0
+    self.titleLabel.Text = "UI Library"
+    self.titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.titleLabel.TextSize = 18
+    self.titleLabel.Font = Enum.Font.GothamBold
+    self.titleLabel.Parent = self.mainFrame
+    
+    -- Cantos arredondados para o título
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = self.titleLabel
+    
+    -- Frame das tabs laterais
+    self.tabFrame = Instance.new("Frame")
+    self.tabFrame.Name = "TabFrame"
+    self.tabFrame.Size = UDim2.new(0, 150, 1, -40)
+    self.tabFrame.Position = UDim2.new(0, 0, 0, 40)
+    self.tabFrame.BackgroundColor3 = self.config.BackgroundColor
+    self.tabFrame.BorderSizePixel = 0
+    self.tabFrame.Parent = self.mainFrame
+    
+    -- Layout das tabs
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabLayout.Padding = UDim.new(0, 2)
+    tabLayout.Parent = self.tabFrame
+    
+    -- Frame do conteúdo
+    self.contentFrame = Instance.new("Frame")
+    self.contentFrame.Name = "ContentFrame"
+    self.contentFrame.Size = UDim2.new(1, -150, 1, -40)
+    self.contentFrame.Position = UDim2.new(0, 150, 0, 40)
+    self.contentFrame.BackgroundColor3 = self.config.MainColor
+    self.contentFrame.BorderSizePixel = 0
+    self.contentFrame.Parent = self.mainFrame
+    
+    -- ScrollingFrame para o conteúdo
+    self.scrollFrame = Instance.new("ScrollingFrame")
+    self.scrollFrame.Name = "ScrollFrame"
+    self.scrollFrame.Size = UDim2.new(1, -10, 1, -10)
+    self.scrollFrame.Position = UDim2.new(0, 5, 0, 5)
+    self.scrollFrame.BackgroundTransparency = 1
+    self.scrollFrame.BorderSizePixel = 0
+    self.scrollFrame.ScrollBarThickness = 6
+    self.scrollFrame.ScrollBarImageColor3 = self.config.AccentColor
+    self.scrollFrame.Parent = self.contentFrame
+    
+    -- Layout do conteúdo
+    self.contentLayout = Instance.new("UIListLayout")
+    self.contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    self.contentLayout.Padding = UDim.new(0, 10)
+    self.contentLayout.Parent = self.scrollFrame
+    
+    -- Botão de fechar
+    self.closeButton = Instance.new("TextButton")
+    self.closeButton.Name = "CloseButton"
+    self.closeButton.Size = UDim2.new(0, 30, 0, 30)
+    self.closeButton.Position = UDim2.new(1, -35, 0, 5)
+    self.closeButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    self.closeButton.BorderSizePixel = 0
+    self.closeButton.Text = "×"
+    self.closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.closeButton.TextSize = 18
+    self.closeButton.Font = Enum.Font.GothamBold
+    self.closeButton.Parent = self.mainFrame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 15)
+    closeCorner.Parent = self.closeButton
+    
+    -- Evento do botão fechar
+    self.closeButton.MouseButton1Click:Connect(function()
+        self.screenGui:Destroy()
+    end)
+end
+
+-- Criar uma nova tab
+function UILibrary:createTab(name)
+    local tab = {
+        name = name,
+        elements = {},
+        frame = nil,
+        button = nil
+    }
+    
+    -- Botão da tab
+    tab.button = Instance.new("TextButton")
+    tab.button.Name = name .. "Button"
+    tab.button.Size = UDim2.new(1, 0, 0, 35)
+    tab.button.BackgroundColor3 = self.config.BorderColor
+    tab.button.BorderSizePixel = 0
+    tab.button.Text = name
+    tab.button.TextColor3 = self.config.TextColor
+    tab.button.TextSize = 14
+    tab.button.Font = Enum.Font.Gotham
+    tab.button.Parent = self.tabFrame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 4)
+    buttonCorner.Parent = tab.button
+    
+    -- Frame da tab (inicialmente invisível)
+    tab.frame = Instance.new("Frame")
+    tab.frame.Name = name .. "Frame"
+    tab.frame.Size = UDim2.new(1, 0, 1, 0)
+    tab.frame.BackgroundTransparency = 1
+    tab.frame.Visible = false
+    tab.frame.Parent = self.scrollFrame
+    
+    -- Layout da tab
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabLayout.Padding = UDim.new(0, 8)
+    tabLayout.Parent = tab.frame
+    
+    -- Evento de clique na tab
+    tab.button.MouseButton1Click:Connect(function()
+        self:switchTab(name)
+    end)
+    
+    -- Efeitos hover
+    tab.button.MouseEnter:Connect(function()
+        createTween(tab.button, {BackgroundColor3 = self.config.AccentColor}, 0.2)
+    end)
+    
+    tab.button.MouseLeave:Connect(function()
+        if self.currentTab ~= name then
+            createTween(tab.button, {BackgroundColor3 = self.config.BorderColor}, 0.2)
+        end
+    end)
+    
+    self.tabs[name] = tab
+    
+    -- Se for a primeira tab, ativá-la
+    if not self.currentTab then
+        self:switchTab(name)
+    end
+    
+    return tab
+end
+
+-- Trocar de tab
+function UILibrary:switchTab(tabName)
+    -- Esconder tab atual
+    if self.currentTab and self.tabs[self.currentTab] then
+        self.tabs[self.currentTab].frame.Visible = false
+        createTween(self.tabs[self.currentTab].button, {BackgroundColor3 = self.config.BorderColor}, 0.2)
+    end
+    
+    -- Mostrar nova tab
+    if self.tabs[tabName] then
+        self.tabs[tabName].frame.Visible = true
+        createTween(self.tabs[tabName].button, {BackgroundColor3 = self.config.AccentColor}, 0.2)
+        self.currentTab = tabName
+    end
+end
+
+-- Criar botão
+function UILibrary:createButton(tabName, text, callback)
+    local tab = self.tabs[tabName]
+    if not tab then return end
+    
+    local button = Instance.new("TextButton")
+    button.Name = text .. "Button"
+    button.Size = UDim2.new(1, -20, 0, 35)
+    button.BackgroundColor3 = self.config.AccentColor
+    button.BorderSizePixel = 0
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    button.Font = Enum.Font.Gotham
+    button.Parent = tab.frame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = button
+    
+    -- Efeitos
+    button.MouseEnter:Connect(function()
+        createTween(button, {BackgroundColor3 = Color3.fromRGB(0, 140, 220)}, 0.2)
+    end)
+    
+    button.MouseLeave:Connect(function()
+        createTween(button, {BackgroundColor3 = self.config.AccentColor}, 0.2)
+    end)
+    
+    button.MouseButton1Click:Connect(function()
+        createTween(button, {Size = UDim2.new(1, -25, 0, 32)}, 0.1)
+        wait(0.1)
+        createTween(button, {Size = UDim2.new(1, -20, 0, 35)}, 0.1)
+        if callback then callback() end
+    end)
+    
+    table.insert(tab.elements, button)
+    return button
+end
+
+-- Criar slider
+function UILibrary:createSlider(tabName, text, min, max, default, callback)
+    local tab = self.tabs[tabName]
+    if not tab then return end
+    
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Name = text .. "Slider"
+    sliderFrame.Size = UDim2.new(1, -20, 0, 60)
+    sliderFrame.BackgroundTransparency = 1
+    sliderFrame.Parent = tab.frame
+    
+    -- Label do slider
+    local sliderLabel = Instance.new("TextLabel")
+    sliderLabel.Name = "Label"
+    sliderLabel.Size = UDim2.new(1, 0, 0, 20)
+    sliderLabel.BackgroundTransparency = 1
+    sliderLabel.Text = text .. ": " .. tostring(default)
+    sliderLabel.TextColor3 = self.config.TextColor
+    sliderLabel.TextSize = 14
+    sliderLabel.Font = Enum.Font.Gotham
+    sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sliderLabel.Parent = sliderFrame
+    
+    -- Background do slider
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Name = "Background"
+    sliderBg.Size = UDim2.new(1, 0, 0, 20)
+    sliderBg.Position = UDim2.new(0, 0, 0, 25)
+    sliderBg.BackgroundColor3 = self.config.BorderColor
+    sliderBg.BorderSizePixel = 0
+    sliderBg.Parent = sliderFrame
+    
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = UDim.new(0, 10)
+    bgCorner.Parent = sliderBg
+    
+    -- Fill do slider
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Name = "Fill"
+    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    sliderFill.BackgroundColor3 = self.config.AccentColor
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBg
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 10)
+    fillCorner.Parent = sliderFill
+    
+    -- Handle do slider
+    local sliderHandle = Instance.new("Frame")
+    sliderHandle.Name = "Handle"
+    sliderHandle.Size = UDim2.new(0, 18, 0, 18)
+    sliderHandle.Position = UDim2.new((default - min) / (max - min), -9, 0.5, -9)
+    sliderHandle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    sliderHandle.BorderSizePixel = 0
+    sliderHandle.Parent = sliderBg
+    
+    local handleCorner = Instance.new("UICorner")
+    handleCorner.CornerRadius = UDim.new(0, 9)
+    handleCorner.Parent = sliderHandle
+    
+    local currentValue = default
+    local dragging = false
+    
+    -- Função para atualizar slider
+    local function updateSlider(input)
+        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        currentValue = math.floor(min + (max - min) * pos)
+        
+        createTween(sliderFill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.1)
+        createTween(sliderHandle, {Position = UDim2.new(pos, -9, 0.5, -9)}, 0.1)
+        
+        sliderLabel.Text = text .. ": " .. tostring(currentValue)
+        
+        if callback then callback(currentValue) end
+    end
+    
+    -- Eventos do slider
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    table.insert(tab.elements, sliderFrame)
+    return sliderFrame
+end
+
+-- Criar toggle
+function UILibrary:createToggle(tabName, text, default, callback)
+    local tab = self.tabs[tabName]
+    if not tab then return end
+    
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = text .. "Toggle"
+    toggleFrame.Size = UDim2.new(1, -20, 0, 35)
+    toggleFrame.BackgroundColor3 = self.config.BorderColor
+    toggleFrame.BorderSizePixel = 0
+    toggleFrame.Parent = tab.frame
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 6)
+    toggleCorner.Parent = toggleFrame
+    
+    -- Label do toggle
+    local toggleLabel = Instance.new("TextLabel")
+    toggleLabel.Name = "Label"
+    toggleLabel.Size = UDim2.new(1, -50, 1, 0)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Text = text
+    toggleLabel.TextColor3 = self.config.TextColor
+    toggleLabel.TextSize = 14
+    toggleLabel.Font = Enum.Font.Gotham
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    toggleLabel.Parent = toggleFrame
+    
+    -- Padding para o label
+    local labelPadding = Instance.new("UIPadding")
+    labelPadding.PaddingLeft = UDim.new(0, 10)
+    labelPadding.Parent = toggleLabel
+    
+    -- Switch do toggle
+    local toggleSwitch = Instance.new("Frame")
+    toggleSwitch.Name = "Switch"
+    toggleSwitch.Size = UDim2.new(0, 40, 0, 20)
+    toggleSwitch.Position = UDim2.new(1, -45, 0.5, -10)
+    toggleSwitch.BackgroundColor3 = default and self.config.AccentColor or Color3.fromRGB(100, 100, 100)
+    toggleSwitch.BorderSizePixel = 0
+    toggleSwitch.Parent = toggleFrame
+    
+    local switchCorner = Instance.new("UICorner")
+    switchCorner.CornerRadius = UDim.new(0, 10)
+    switchCorner.Parent = toggleSwitch
+    
+    -- Handle do switch
+    local switchHandle = Instance.new("Frame")
+    switchHandle.Name = "Handle"
+    switchHandle.Size = UDim2.new(0, 16, 0, 16)
+    switchHandle.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+    switchHandle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    switchHandle.BorderSizePixel = 0
+    switchHandle.Parent = toggleSwitch
+    
+    local handleCorner = Instance.new("UICorner")
+    handleCorner.CornerRadius = UDim.new(0, 8)
+    handleCorner.Parent = switchHandle
+    
+    local toggled = default
+    
+    -- Função para atualizar toggle
+    local function updateToggle()
+        toggled = not toggled
+        
+        if toggled then
+            createTween(toggleSwitch, {BackgroundColor3 = self.config.AccentColor}, 0.2)
+            createTween(switchHandle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2)
+        else
+            createTween(toggleSwitch, {BackgroundColor3 = Color3.fromRGB(100, 100, 100)}, 0.2)
+            createTween(switchHandle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2)
+        end
+        
+        if callback then callback(toggled) end
+    end
+    
+    -- Eventos
+    toggleFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateToggle()
+        end
+    end)
+    
+    toggleFrame.MouseEnter:Connect(function()
+        createTween(toggleFrame, {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}, 0.2)
+    end)
+    
+    toggleFrame.MouseLeave:Connect(function()
+        createTween(toggleFrame, {BackgroundColor3 = self.config.BorderColor}, 0.2)
+    end)
+    
+    table.insert(tab.elements, toggleFrame)
+    return toggleFrame
+end
+
+-- Criar label
+function UILibrary:createLabel(tabName, text)
+    local tab = self.tabs[tabName]
+    if not tab then return end
+    
+    local label = Instance.new("TextLabel")
+    label.Name = text .. "Label"
+    label.Size = UDim2.new(1, -20, 0, 25)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = self.config.TextColor
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = tab.frame
+    
+    table.insert(tab.elements, label)
+    return label
+end
+
+-- Atualizar canvas size do scroll frame
+function UILibrary:updateCanvasSize()
+    if self.contentLayout then
+        self.scrollFrame.CanvasSize = UDim2.new(0, 0, 0, self.contentLayout.AbsoluteContentSize.Y + 10)
+    end
+end
+
+-- Conectar evento para atualizar canvas size automaticamente
+game:GetService("RunService").Heartbeat:Connect(function()
+    for _, tab in pairs(UILibrary.tabs or {}) do
+        if tab.frame and tab.frame.Parent then
+            local layout = tab.frame:FindFirstChild("UIListLayout")
+            if layout then
+                tab.frame.Size = UDim2.new(1, 0, 0, layout.AbsoluteContentSize.Y)
+            end
+        end
+    end
+    
+    if UILibrary.scrollFrame and UILibrary.contentLayout then
+        UILibrary.scrollFrame.CanvasSize = UDim2.new(0, 0, 0, UILibrary.contentLayout.AbsoluteContentSize.Y + 10)
+    end
+end)
+
+-- Exemplo de uso:
+--[[
+local ui = UILibrary.new()
+
+-- Criar tabs
+local mainTab = ui:createTab("Principal")
+local settingsTab = ui:createTab("Configurações")
+
+-- Adicionar elementos na tab principal
+ui:createLabel("Principal", "Bem-vindo à UI Library!")
+ui:createButton("Principal", "Clique Aqui", function()
+    print("Botão clicado!")
+end)
+
+ui:createSlider("Principal", "Velocidade", 1, 100, 50, function(value)
+    print("Velocidade:", value)
+end)
+
+ui:createToggle("Principal", "Ativar Feature", false, function(enabled)
+    print("Feature ativada:", enabled)
+end)
+
+-- Adicionar elementos na tab de configurações
+ui:createLabel("Configurações", "Configurações da UI")
+ui:createToggle("Configurações", "Modo Escuro", true, function(enabled)
+    print("Modo escuro:", enabled)
+end)
+
+ui:createSlider("Configurações", "Opacidade", 0, 100, 80, function(value)
+    print("Opacidade:", value)
+end)
+--]]
+
+return UILibrary
