@@ -34,8 +34,8 @@ local function createBaseWindow(title)
 
     local main = Instance.new("Frame")
     main.Name = "Main"
-    main.Size = UDim2.new(0, 340, 0, 420)
-    main.Position = UDim2.new(0.5, -170, 0.5, -210)
+    main.Size = UDim2.new(0, 360, 0, 440)
+    main.Position = UDim2.new(0.5, -180, 0.5, -220)
     main.BackgroundColor3 = colors.background
     main.BorderSizePixel = 2
     main.BorderColor3 = colors.border
@@ -60,7 +60,7 @@ local function createBaseWindow(title)
     -- Barra de título destacada
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 36)
+    titleBar.Size = UDim2.new(1, 0, 0, 44)
     titleBar.BackgroundColor3 = colors.titlebar
     titleBar.BorderSizePixel = 0
     titleBar.Parent = main
@@ -68,14 +68,32 @@ local function createBaseWindow(title)
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(1, 0, 1, 0)
+    titleLabel.Size = UDim2.new(1, -60, 1, 0)
+    titleLabel.Position = UDim2.new(0, 12, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title or "Menu"
     titleLabel.TextColor3 = colors.accent
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 22
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = titleBar
     titleLabel.ZIndex = 3
+
+    -- Botão de minimizar
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Name = "MinimizeBtn"
+    minimizeBtn.Size = UDim2.new(0, 32, 0, 32)
+    minimizeBtn.Position = UDim2.new(1, -40, 0.5, -16)
+    minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    minimizeBtn.Text = "_"
+    minimizeBtn.TextColor3 = colors.text
+    minimizeBtn.Font = Enum.Font.GothamBold
+    minimizeBtn.TextSize = 24
+    minimizeBtn.AutoButtonColor = true
+    minimizeBtn.Parent = titleBar
+    minimizeBtn.ZIndex = 4
+    local minCorner = Instance.new("UICorner", minimizeBtn)
+    minCorner.CornerRadius = UDim.new(1, 0)
 
     -- Drag functionality
     local UserInputService = game:GetService("UserInputService")
@@ -83,7 +101,7 @@ local function createBaseWindow(title)
     local dragStart, startPos
 
     titleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not minimizeBtn:IsMouseOver() then
             dragging = true
             dragStart = input.Position
             startPos = main.Position
@@ -103,15 +121,27 @@ local function createBaseWindow(title)
 
     local content = Instance.new("Frame")
     content.Name = "Content"
-    content.Position = UDim2.new(0, 0, 0, 36)
-    content.Size = UDim2.new(1, 0, 1, -36)
+    content.Position = UDim2.new(0, 12, 0, 44)
+    content.Size = UDim2.new(1, -24, 1, -56)
     content.BackgroundTransparency = 1
     content.Parent = main
     content.ZIndex = 2
 
     local layout = Instance.new("UIListLayout", content)
-    layout.Padding = UDim.new(0, 8)
+    layout.Padding = UDim.new(0, 10)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    -- Minimizar funcionalidade
+    local minimized = false
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        content.Visible = not minimized
+        if minimized then
+            main.Size = UDim2.new(0, 360, 0, 56)
+        else
+            main.Size = UDim2.new(0, 360, 0, 440)
+        end
+    end)
 
     return screenGui, main, content
 end
@@ -124,7 +154,7 @@ end
 
 function UILib:AddLabel(text)
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -24, 0, 24)
+    label.Size = UDim2.new(1, 0, 0, 24)
     label.BackgroundTransparency = 1
     label.Text = text
     label.TextColor3 = colors.label
@@ -137,7 +167,7 @@ end
 
 function UILib:AddButton(text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -24, 0, 32)
+    btn.Size = UDim2.new(1, 0, 0, 32)
     btn.BackgroundColor3 = colors.button
     btn.Text = text
     btn.TextColor3 = colors.text
@@ -161,7 +191,7 @@ end
 
 function UILib:AddToggle(text, default, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -24, 0, 32)
+    frame.Size = UDim2.new(1, 0, 0, 32)
     frame.BackgroundTransparency = 1
     frame.Parent = self._content
 
@@ -196,7 +226,7 @@ end
 
 function UILib:AddSlider(text, min, max, default, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -24, 0, 44)
+    frame.Size = UDim2.new(1, 0, 0, 44)
     frame.BackgroundTransparency = 1
     frame.Parent = self._content
 
@@ -264,7 +294,7 @@ end
 
 function UILib:AddInput(placeholder, callback)
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -24, 0, 28)
+    box.Size = UDim2.new(1, 0, 0, 28)
     box.BackgroundColor3 = colors.input
     box.Text = ""
     box.PlaceholderText = placeholder or "Digite aqui..."
