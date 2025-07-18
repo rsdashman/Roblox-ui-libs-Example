@@ -949,39 +949,6 @@ local function createList(option, parent, holder)
 
 
 
-    parentTable.main = library:Create("ImageButton", {
-        -- ... propriedades ...
-        Parent = parent
-    })
-    
-    -- Coloque aqui o código do galaxy border:
-    local galaxyBorder = library:Create("ImageLabel", {
-        Position = UDim2.new(0, -4, 0, -4),
-        Size = UDim2.new(1, 8, 1, 8),
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://3570695787",
-        ImageColor3 = Color3.fromRGB(255, 255, 255),
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(100, 100, 100, 100),
-        SliceScale = 0.04,
-        Parent = parent,
-        ZIndex = (parentTable.main.ZIndex or 1) - 1,
-    })
-    
-    local galaxyGradient = Instance.new("UIGradient")
-    galaxyGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,255)),
-        ColorSequenceKeypoint.new(0.2, Color3.fromRGB(0,255,255)),
-        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,0,255)),
-        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,0)),
-        ColorSequenceKeypoint.new(0.8, Color3.fromRGB(255,255,0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0)),
-    }
-    galaxyGradient.Rotation = 0
-    galaxyGradient.Parent = galaxyBorder
-
-
-
 
 
 
