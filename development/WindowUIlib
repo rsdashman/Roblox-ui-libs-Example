@@ -1,9 +1,9 @@
--- UILib.lua
--- UI Library inspirada em Wizard/Orion para Roblox
--- Barra de título com minimizar/fechar, animação, controles alinhados, visual moderno
+-- WindowLib.lua
+-- UI Library estilo window clássico para Roblox
+-- Barra de título, drag, minimizar/fechar, controles, padding, sombra, animação
 
-local UILib = {}
-UILib.__index = UILib
+local WindowLib = {}
+WindowLib.__index = WindowLib
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -12,7 +12,9 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
 
 local colors = {
-    background = Color3.fromRGB(34, 36, 40),
+    background = Color3.fromRGB(30, 30, 32),
+    border = Color3.fromRGB(60, 60, 70),
+    titlebar = Color3.fromRGB(40, 40, 45),
     accent = Color3.fromRGB(0, 170, 255),
     button = Color3.fromRGB(44, 47, 51),
     button_hover = Color3.fromRGB(60, 65, 70),
@@ -22,31 +24,162 @@ local colors = {
     slider = Color3.fromRGB(60, 60, 70),
     toggle_on = Color3.fromRGB(0, 170, 255),
     toggle_off = Color3.fromRGB(80, 80, 90),
-    titlebar = Color3.fromRGB(28, 30, 34),
-    border = Color3.fromRGB(0, 170, 255),
-    shadow = Color3.fromRGB(0,0,0),
 }
 
-local function createIconBtn(parent, text, pos, callback)
+local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 28, 0, 28)
-    btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(44, 47, 51)
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = colors.button
     btn.Text = text
     btn.TextColor3 = colors.text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 20
-    btn.AutoButtonColor = true
+    btn.TextSize = 18
+    btn.AutoButtonColor = false
     btn.Parent = parent
     local uicorner = Instance.new("UICorner", btn)
-    uicorner.CornerRadius = UDim.new(1, 0)
-    btn.MouseButton1Click:Connect(callback)
+    uicorner.CornerRadius = UDim.new(0, 8)
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = colors.button_hover
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = colors.button
+    end)
+    btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
     return btn
 end
 
-local function createBaseWindow(title)
+local function createLabel(parent, text)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = colors.label
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+    return label
+end
+
+local function createToggle(parent, text, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 32)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -44, 1, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = colors.text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0, 36, 0, 22)
+    toggle.Position = UDim2.new(1, -36, 0.5, -11)
+    toggle.BackgroundColor3 = default and colors.toggle_on or colors.toggle_off
+    toggle.Text = ""
+    toggle.Parent = frame
+    local uicorner = Instance.new("UICorner", toggle)
+    uicorner.CornerRadius = UDim.new(1, 0)
+
+    local state = default or false
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        toggle.BackgroundColor3 = state and colors.toggle_on or colors.toggle_off
+        if callback then callback(state) end
+    end)
+    return toggle
+end
+
+local function createSlider(parent, text, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 48)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 18)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text .. " [" .. tostring(default) .. "]"
+    label.TextColor3 = colors.text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new(1, -44, 0, 8)
+    sliderBar.Position = UDim2.new(0, 0, 0, 28)
+    sliderBar.BackgroundColor3 = colors.slider
+    sliderBar.Parent = frame
+    local uicorner = Instance.new("UICorner", sliderBar)
+    uicorner.CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = UDim2.new((default-min)/(max-min), -9, 0.5, -9)
+    knob.BackgroundColor3 = colors.accent
+    knob.Parent = sliderBar
+    local uicorner2 = Instance.new("UICorner", knob)
+    uicorner2.CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+    local value = default or min
+
+    local function setValueFromX(x)
+        local rel = math.clamp((x - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+        value = math.floor((min + (max-min)*rel) + 0.5)
+        knob.Position = UDim2.new(rel, -9, 0.5, -9)
+        label.Text = text .. " [" .. tostring(value) .. "]"
+        if callback then callback(value) end
+    end
+
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    end)
+    knob.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    sliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; setValueFromX(input.Position.X) end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then setValueFromX(input.Position.X) end
+    end)
+    return knob
+end
+
+local function createInput(parent, placeholder, callback)
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, 0, 0, 32)
+    box.BackgroundColor3 = colors.input
+    box.Text = ""
+    box.PlaceholderText = placeholder or "Digite aqui..."
+    box.TextColor3 = colors.text
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 16
+    box.ClearTextOnFocus = false
+    box.Parent = parent
+    local uicorner = Instance.new("UICorner", box)
+    uicorner.CornerRadius = UDim.new(0, 8)
+    box.FocusLost:Connect(function(enter)
+        if enter and callback then callback(box.Text) end
+    end)
+    return box
+end
+
+function WindowLib:CreateWindow(title)
+    local self = setmetatable({}, WindowLib)
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "UILib_WizardMenu"
+    screenGui.Name = "WindowLib_Menu"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = PlayerGui
 
@@ -54,7 +187,7 @@ local function createBaseWindow(title)
     shadow.Name = "Shadow"
     shadow.Size = UDim2.new(0, 420, 0, 500)
     shadow.Position = UDim2.new(0.5, -210, 0.5, -250)
-    shadow.BackgroundColor3 = colors.shadow
+    shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
     shadow.BackgroundTransparency = 0.7
     shadow.BorderSizePixel = 0
     shadow.ZIndex = 0
@@ -97,17 +230,43 @@ local function createBaseWindow(title)
     titleLabel.Parent = titleBar
     titleLabel.ZIndex = 3
 
-    -- Botões minimizar/fechar
-    local closeBtn = createIconBtn(titleBar, "×", UDim2.new(1, -36, 0.5, -14), function() main.Visible = false end)
-    closeBtn.ZIndex = 4
-    local minimizeBtn = createIconBtn(titleBar, "_", UDim2.new(1, -68, 0.5, -14), function()
+    -- Botão fechar
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 28, 0, 28)
+    closeBtn.Position = UDim2.new(1, -36, 0.5, -14)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(44, 47, 51)
+    closeBtn.Text = "×"
+    closeBtn.TextColor3 = colors.text
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 20
+    closeBtn.AutoButtonColor = true
+    closeBtn.Parent = titleBar
+    local closeCorner = Instance.new("UICorner", closeBtn)
+    closeCorner.CornerRadius = UDim.new(1, 0)
+    closeBtn.MouseButton1Click:Connect(function()
+        main.Visible = false
+    end)
+
+    -- Botão minimizar
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+    minimizeBtn.Position = UDim2.new(1, -68, 0.5, -14)
+    minimizeBtn.BackgroundColor3 = Color3.fromRGB(44, 47, 51)
+    minimizeBtn.Text = "_"
+    minimizeBtn.TextColor3 = colors.text
+    minimizeBtn.Font = Enum.Font.GothamBold
+    minimizeBtn.TextSize = 20
+    minimizeBtn.AutoButtonColor = true
+    minimizeBtn.Parent = titleBar
+    local minCorner = Instance.new("UICorner", minimizeBtn)
+    minCorner.CornerRadius = UDim.new(1, 0)
+    minimizeBtn.MouseButton1Click:Connect(function()
         if main.Size.Y.Offset > 60 then
             TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 60)}):Play()
         else
             TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 480)}):Play()
         end
     end)
-    minimizeBtn.ZIndex = 4
 
     -- Drag
     local dragging = false
@@ -143,164 +302,32 @@ local function createBaseWindow(title)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    return screenGui, main, content, content, main, closeBtn
-end
-
-function UILib:CreateWindow(title)
-    local self = setmetatable({}, UILib)
-    self._gui, self._main, self._content, self._container, self._window, self._closeBtn = createBaseWindow(title)
+    -- Métodos para adicionar controles
+    function self:AddLabel(text)
+        return createLabel(content, text)
+    end
+    function self:AddButton(text, callback)
+        return createButton(content, text, callback)
+    end
+    function self:AddToggle(text, default, callback)
+        return createToggle(content, text, default, callback)
+    end
+    function self:AddSlider(text, min, max, default, callback)
+        return createSlider(content, text, min, max, default, callback)
+    end
+    function self:AddInput(placeholder, callback)
+        return createInput(content, placeholder, callback)
+    end
+    function self:Show()
+        main.Visible = true
+        TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 480)}):Play()
+    end
+    function self:Hide()
+        TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 60)}):Play()
+        wait(0.26)
+        main.Visible = false
+    end
     return self
 end
 
-function UILib:Show()
-    self._main.Visible = true
-    TweenService:Create(self._main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 480)}):Play()
-end
-function UILib:Hide()
-    TweenService:Create(self._main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 400, 0, 60)}):Play()
-    wait(0.26)
-    self._main.Visible = false
-end
-
-function UILib:AddLabel(text)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -40, 0, 26)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = colors.label
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 16
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = self._content
-    return label
-end
-
-function UILib:AddButton(text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -40, 0, 36)
-    btn.BackgroundColor3 = colors.button
-    btn.Text = text
-    btn.TextColor3 = colors.text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 18
-    btn.AutoButtonColor = false
-    btn.Parent = self._content
-    local uicorner = Instance.new("UICorner", btn)
-    uicorner.CornerRadius = UDim.new(0, 8)
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = colors.button_hover
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = colors.button
-    end)
-    btn.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
-    return btn
-end
-
-function UILib:AddToggle(text, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -40, 0, 36)
-    frame.BackgroundTransparency = 1
-    frame.Parent = self._content
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -44, 1, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = colors.text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 16
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 36, 0, 22)
-    toggle.Position = UDim2.new(1, -36, 0.5, -11)
-    toggle.BackgroundColor3 = default and colors.toggle_on or colors.toggle_off
-    toggle.Text = ""
-    toggle.Parent = frame
-    local uicorner = Instance.new("UICorner", toggle)
-    uicorner.CornerRadius = UDim.new(1, 0)
-    local state = default or false
-    toggle.MouseButton1Click:Connect(function()
-        state = not state
-        toggle.BackgroundColor3 = state and colors.toggle_on or colors.toggle_off
-        if callback then callback(state) end
-    end)
-    return toggle
-end
-
-function UILib:AddSlider(text, min, max, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -40, 0, 48)
-    frame.BackgroundTransparency = 1
-    frame.Parent = self._content
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 18)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text .. " [" .. tostring(default) .. "]"
-    label.TextColor3 = colors.text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 15
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
-    local sliderBar = Instance.new("Frame")
-    sliderBar.Size = UDim2.new(1, -44, 0, 8)
-    sliderBar.Position = UDim2.new(0, 0, 0, 28)
-    sliderBar.BackgroundColor3 = colors.slider
-    sliderBar.Parent = frame
-    local uicorner = Instance.new("UICorner", sliderBar)
-    uicorner.CornerRadius = UDim.new(1, 0)
-    local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, 18, 0, 18)
-    knob.Position = UDim2.new((default-min)/(max-min), -9, 0.5, -9)
-    knob.BackgroundColor3 = colors.accent
-    knob.Parent = sliderBar
-    local uicorner2 = Instance.new("UICorner", knob)
-    uicorner2.CornerRadius = UDim.new(1, 0)
-    local dragging = false
-    local value = default or min
-    local function setValueFromX(x)
-        local rel = math.clamp((x - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-        value = math.floor((min + (max-min)*rel) + 0.5)
-        knob.Position = UDim2.new(rel, -9, 0.5, -9)
-        label.Text = text .. " [" .. tostring(value) .. "]"
-        if callback then callback(value) end
-    end
-    knob.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
-    end)
-    knob.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
-    sliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; setValueFromX(input.Position.X) end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then setValueFromX(input.Position.X) end
-    end)
-    return knob
-end
-
-function UILib:AddInput(placeholder, callback)
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -40, 0, 32)
-    box.BackgroundColor3 = colors.input
-    box.Text = ""
-    box.PlaceholderText = placeholder or "Digite aqui..."
-    box.TextColor3 = colors.text
-    box.Font = Enum.Font.Gotham
-    box.TextSize = 16
-    box.ClearTextOnFocus = false
-    box.Parent = self._content
-    local uicorner = Instance.new("UICorner", box)
-    uicorner.CornerRadius = UDim.new(0, 8)
-    box.FocusLost:Connect(function(enter)
-        if enter and callback then callback(box.Text) end
-    end)
-    return box
-end
-
-return UILib
+return WindowLib
